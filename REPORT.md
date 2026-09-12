@@ -36,25 +36,41 @@ Chrome sign-in alone does not guarantee that this executable can read Chrome's e
 The text report includes provider-specific links and credential handoff instructions when a reading is unavailable.
 These instructions do not open a browser, read the clipboard, or change credentials until you run the commands yourself.
 
-### Z.ai and DeepSeek: save an API key once
+### Z.ai: save an API key once
 
-1. Open the [Z.ai API keys page](https://z.ai/manage-apikey/apikey-list) or the [DeepSeek API keys page](https://platform.deepseek.com/api_keys).
+1. Open the [Z.ai API keys page](https://z.ai/manage-apikey/apikey-list).
 2. Copy the key for the account that you want to check.
 3. Run the matching command with your report executable:
 
 ```bash
 pbpaste | codexbar config set-api-key --provider zai --stdin
-pbpaste | codexbar config set-api-key --provider deepseek --stdin
 ```
 
-Copy each provider's key separately before its command. Replace `codexbar` with your executable path if it is not on PATH.
+Replace `codexbar` with your executable path if it is not on PATH.
 The failure instructions already include the executable path that you used.
-These commands save credentials in your local CodexBar configuration. They do not save report data.
+This command saves a credential in your local CodexBar configuration. It does not save report data.
 The keys do not appear in command arguments or shell history. Do not paste keys into chat.
 For a saved token account, update that account's key instead of the provider-wide key.
 
 Z.ai needs a key from the account with your Coding Plan. A browser session alone does not supply this key.
+
+### DeepSeek: supply an API key
+
+1. Open the [DeepSeek API keys page](https://platform.deepseek.com/api_keys).
+2. Copy the key for the account that you want to check.
+3. Run this command:
+
+```bash
+export DEEPSEEK_API_KEY="$(pbpaste)"
+```
+
+4. Run the report again in this terminal.
+
 A DeepSeek API key is enough for the balance report. It does not need access to your Chrome session.
+The exported key stays in this shell until you unset it or close the terminal. Repeat the export in a new terminal.
+For persistent storage, use DeepSeek's **API tokens** section in CodexBar settings.
+The upstream `config set-api-key` command does not support DeepSeek. Do not use that command for this provider.
+To remove the exported key, run `unset DEEPSEEK_API_KEY`. Do not paste keys into chat.
 
 ### Qwen Cloud and Alibaba Token Plan: copy a browser session
 

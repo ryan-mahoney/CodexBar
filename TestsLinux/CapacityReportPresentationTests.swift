@@ -40,7 +40,7 @@ struct CapacityReportPresentationTests {
     @Test
     func `setup instructions describe credential handoff not just browser login`() {
         let config = CodexBarConfig.makeDefault()
-        for provider in ["zai", "deepseek"] {
+        for provider in ["zai"] {
             let lines = ReportSetupGuidance.lines(provider: provider, command: "/tmp/report tool", config: config)
             #expect(lines.joined()
                 .contains("pbpaste | '/tmp/report tool' config set-api-key --provider \(provider) --stdin"))
@@ -48,7 +48,10 @@ struct CapacityReportPresentationTests {
             #expect(lines.joined().contains("https://"))
         }
         #expect(ProviderConfigEnvironment.supportsAPIKeyOverride(for: .zai))
-        #expect(ProviderConfigEnvironment.supportsAPIKeyOverride(for: .deepseek))
+        let deepseek = ReportSetupGuidance.lines(provider: "deepseek", command: "codexbar", config: config).joined()
+        #expect(deepseek.contains("export DEEPSEEK_API_KEY=\"$(pbpaste)\""))
+        #expect(!deepseek.contains("set-api-key"))
+        #expect(DeepSeekSettingsReader.apiKey(environment: ["DEEPSEEK_API_KEY": "fixture-key"]) == "fixture-key")
         for (provider, variable) in [
             ("qwencloud", "QWEN_CLOUD_COOKIE"),
             ("alibabatokenplan", "ALIBABA_TOKEN_PLAN_COOKIE"),
@@ -78,7 +81,7 @@ struct CapacityReportPresentationTests {
     @Test
     func `setup command quotes shell metacharacters in executable paths`() {
         let text = ReportSetupGuidance.lines(
-            provider: "deepseek",
+            provider: "zai",
             command: "/tmp/reader's $(test)/codexbar",
             config: .makeDefault()).joined()
         #expect(text.contains("'/tmp/reader'\"'\"'s $(test)/codexbar' config set-api-key"))

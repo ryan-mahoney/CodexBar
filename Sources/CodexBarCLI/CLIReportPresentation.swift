@@ -65,12 +65,15 @@ enum ReportSetupGuidance {
                 "For a saved token account, update that account's key instead of the provider-wide key.",
             ]
         case "deepseek":
-            let lines = Self.apiKeyLines(
-                provider: provider,
-                executable: executable,
-                url: "https://platform.deepseek.com/api_keys")
-            return lines + [
+            return [
+                "A failed request does not prove that you are signed out. If no valid key is configured:",
+                "Open https://platform.deepseek.com/api_keys and copy your API key.",
+                "In this terminal, run: export DEEPSEEK_API_KEY=\"$(pbpaste)\"",
                 "The API key is enough for the balance report. Chrome session access is not required.",
+                "Run the report again in this terminal. Repeat the export in a new terminal.",
+                "For persistent storage, use DeepSeek's API tokens section in CodexBar settings.",
+                "Treat the key as a password. Do not paste it into chat.",
+                "If a valid key still fails, check the network and provider service.",
             ]
         case "qwencloud":
             return [

@@ -1,0 +1,56 @@
+name: Capacity report
+
+on:
+  push:
+    branches: [capacity-report]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      CODEXBAR_SUPPRESS_TEST_KEYCHAIN_ACCESS: '1'
+      CODEXBAR_TEST_CODEX_FILE_ISOLATION: '1'
+      CODEXBAR_TEST_SESSION_FILE_ISOLATION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select toolchain
+        run: |
+          for candidate in /Applications/Xcode_26.3.app /Applications/Xcode_26.2.app; do
+            if [ -d "$candidate" ]; then
+              echo "DEVELOPER_DIR=$candidate/Contents/Developer" >> "$GITHUB_ENV"
+              break
+            fi
+          done
+      - uses: actions/cache@v4
+        with:
+          path: .build
+          key: capacity-report-macos-${{ hashFiles('Package.resolved') }}-${{ github.sha }}
+          restore-keys: capacity-report-macos-${{ hashFiles('Package.resolved') }}-
+      - name: Build CLI
+        run: swift build --product CodexBarCLI
+      - name: Offline report tests
+        run: swift test --filter CapacityReport
+      - name: Offline command checks
+        run: |
+          .build/debug/CodexBarCLI report --help
+          set +e
+          .build/debug/CodexBarCLI report --subscriptions invalid
+          result=$?
+          set -e
+          test "$result" = 64
+      - name: Package CLI
+        run: |
+          mkdir -p report-cli
+          cp .build/debug/CodexBarCLI report-cli/codexbar
+          cp -R .build/debug/CodexBar_CodexBarCore.bundle report-cli/
+          cp LICENSE report-cli/
+          tar -czf capacity-report-macos-arm64.tar.gz report-cli
+      - uses: actions/upload-artifact@v4
+        with:
+          name: capacity-report-macos-arm64
+          path: capacity-report-macos-arm64.tar.gz

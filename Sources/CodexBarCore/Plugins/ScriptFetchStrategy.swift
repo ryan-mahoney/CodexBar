@@ -116,8 +116,12 @@ public final class ScriptFetchStrategy: ProviderFetchStrategy, @unchecked Sendab
             throw ProviderPluginError.invalidManifest(
                 "bundled plugin id '\(runtime.manifest.id.rawValue)' does not match '\(self.provider.rawValue)'")
         }
+        var settings = values.settings
+        if ProviderReportMode.isActive {
+            settings["CODEXBAR_REPORT_ONLY"] = "1"
+        }
         let usage = try await runtime.fetchUsage(
-            settings: values.settings,
+            settings: settings,
             secrets: values.secrets,
             cookieResolver: ProviderPluginCookieBroker.resolver(context: context))
         return self.makeResult(usage: usage, sourceLabel: self.sourceLabel)

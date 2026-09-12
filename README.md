@@ -1,5 +1,7 @@
 # CodexBar 🎚️ — May your tokens never run out.
 
+This fork adds a [current capacity report](REPORT.md): subscription usage and monetary balances, with no retained report data.
+
 > Every AI coding limit, in your menu bar.
 
 [![Latest release](https://img.shields.io/github/v/release/steipete/CodexBar?style=flat-square&color=0a0a0c)](https://github.com/steipete/CodexBar/releases/latest)

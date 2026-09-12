@@ -166,7 +166,12 @@ extension ProviderHTTPTransport {
 }
 
 public final class ProviderHTTPClient: ProviderHTTPTransport, @unchecked Sendable {
-    public static let shared = ProviderHTTPClient(session: ProviderHTTPClient.sharedSession())
+    private static let ordinary = ProviderHTTPClient(session: ProviderHTTPClient.sharedSession())
+    private static let report = ProviderHTTPClient(session: ProviderHTTPClient.redirectGuardedSession(
+        configuration: ProviderReportMode.httpConfiguration()))
+    public static var shared: ProviderHTTPClient {
+        ProviderReportMode.isActive ? self.report : self.ordinary
+    }
 
     private let session: URLSession
 
@@ -175,7 +180,8 @@ public final class ProviderHTTPClient: ProviderHTTPTransport, @unchecked Sendabl
     }
 
     static func defaultConfiguration() -> URLSessionConfiguration {
-        let configuration = URLSessionConfiguration.default
+        let configuration = ProviderReportMode.isActive
+            ? ProviderReportMode.httpConfiguration() : URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 30
         configuration.timeoutIntervalForResource = 90
         #if !os(Linux)

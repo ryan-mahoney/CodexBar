@@ -49,6 +49,8 @@ enum CodexBarCLI {
             let invocation = try program.resolve(argv: argv)
             Self.bootstrapLogging(path: invocation.path, values: invocation.parsedValues)
             switch invocation.path {
+            case ["report"]:
+                await self.runReport(invocation.parsedValues)
             case ["cards"], ["usage"]:
                 await self.runUsageDisplay(path: invocation.path, values: invocation.parsedValues)
             case ["cost"]:
@@ -175,6 +177,11 @@ enum CodexBarCLI {
         let guardSignature = CommandSignature.describe(GuardOptions())
 
         var descriptors = [
+            CommandDescriptor(
+                name: "report",
+                abstract: "Print current subscription quotas and monetary balances",
+                discussion: nil,
+                signature: CommandSignature.describe(ReportOptions())),
             CommandDescriptor(
                 name: "cards",
                 abstract: "Print usage as a terminal card grid",
@@ -413,7 +420,7 @@ enum CodexBarCLI {
         let verbose = values.flags.contains("verbose")
         let rawLevel = values.options["logLevel"]?.last
         let level = Self.resolvedLogLevel(verbose: verbose, rawLevel: rawLevel)
-        let destination: CodexBarLog.Destination = path == ["diagnose"] ? .discard : .stderr
+        let destination: CodexBarLog.Destination = path == ["diagnose"] || path == ["report"] ? .discard : .stderr
         return .init(destination: destination, level: level, json: isJSON)
     }
 

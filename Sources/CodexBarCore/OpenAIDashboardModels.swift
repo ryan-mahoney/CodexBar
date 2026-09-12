@@ -389,6 +389,7 @@ public enum OpenAIDashboardCacheStore {
     @TaskLocal static var cacheURLOverride: URL?
 
     public static func load() -> OpenAIDashboardCache? {
+        guard !ProviderReportMode.isActive else { return nil }
         guard let url = self.cacheURL else { return nil }
         guard let data = try? Data(contentsOf: url) else { return nil }
         let decoder = JSONDecoder()
@@ -397,6 +398,7 @@ public enum OpenAIDashboardCacheStore {
     }
 
     public static func save(_ cache: OpenAIDashboardCache) {
+        guard !ProviderReportMode.isActive else { return }
         guard let url = self.cacheURL else { return }
         do {
             try FileManager.default.createDirectory(
@@ -412,6 +414,7 @@ public enum OpenAIDashboardCacheStore {
     }
 
     public static func clear() {
+        guard !ProviderReportMode.isActive else { return }
         guard let url = self.cacheURL else { return }
         try? FileManager.default.removeItem(at: url)
     }

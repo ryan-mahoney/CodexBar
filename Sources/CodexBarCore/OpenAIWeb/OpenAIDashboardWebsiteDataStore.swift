@@ -24,6 +24,7 @@ public enum OpenAIDashboardWebsiteDataStore {
         forAccountEmail email: String?,
         scope: CookieHeaderCache.Scope? = nil) -> WKWebsiteDataStore
     {
+        if ProviderReportMode.isActive { return .nonPersistent() }
         guard let normalized = normalizeEmail(email) else { return .default() }
         let storageKey = self.storageKey(normalizedEmail: normalized, scope: scope)
 

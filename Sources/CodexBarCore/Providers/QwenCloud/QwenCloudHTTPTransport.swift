@@ -20,7 +20,8 @@ struct QwenCloudHTTPTransport: ProviderHTTPTransport, @unchecked Sendable {
     private let routing: OneConsoleCookieRouting
 
     init(session: URLSession? = nil, routing: OneConsoleCookieRouting) {
-        self.session = session ?? Self.sharedSession
+        self.session = session ?? (ProviderReportMode.isActive
+            ? URLSession(configuration: ProviderReportMode.httpConfiguration()) : Self.sharedSession)
         self.routing = routing
     }
 

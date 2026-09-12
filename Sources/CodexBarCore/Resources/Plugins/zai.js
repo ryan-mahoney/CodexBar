@@ -11,6 +11,7 @@ defineProvider({
   ],
   auth: { type: "bearer", secret: "Z_AI_API_KEY" },
   settings: [
+    { key: "CODEXBAR_REPORT_ONLY", title: "Quota-only report", type: "plain" },
     { key: "Z_AI_API_KEY", title: "API key", type: "secure" },
     { key: "Z_AI_REGION", title: "API region", type: "plain" },
     { key: "Z_AI_USAGE_SCOPE", title: "Usage scope", type: "plain" },
@@ -165,6 +166,8 @@ defineProvider({
     }
 
     const limits = root.data.limits.map(parseLimit).filter(Boolean);
+    const reportOnly = ctx.settings.get("CODEXBAR_REPORT_ONLY") === "1";
+    if (reportOnly && limits.length === 0) throw new Error("z.ai quota data is unavailable");
     const tokenLimits = limits
       .filter((item) => item.raw.type === "TOKENS_LIMIT" || item.raw.type === "CREDIT_LIMIT")
       .sort((a, b) => (a.windowMinutes || Number.MAX_SAFE_INTEGER) - (b.windowMinutes || Number.MAX_SAFE_INTEGER));
@@ -246,6 +249,8 @@ defineProvider({
         }
       } catch {}
     }
+
+    if (reportOnly) return result;
 
     function compactTokenCount(value) {
       const divisor = value >= 1_000_000_000 ? 1_000_000_000 : value >= 1_000_000 ? 1_000_000 : null;

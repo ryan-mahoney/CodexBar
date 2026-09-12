@@ -16,7 +16,8 @@ enum ClaudeOAuthUsageRateLimitGate {
     }
 
     static func currentBlockedUntil(accessToken: String, now: Date = Date()) -> Date? {
-        self.lock.withLock {
+        guard !ProviderReportMode.isActive else { return nil }
+        return self.lock.withLock {
             self.purgeLegacyAndExpiredEntries(now: now)
             let key = self.blockedUntilKey(accessToken: accessToken)
             guard let raw = UserDefaults.standard.object(forKey: key) as? Double else {
@@ -27,6 +28,7 @@ enum ClaudeOAuthUsageRateLimitGate {
     }
 
     static func recordRateLimit(accessToken: String, retryAfter: Date?, now: Date = Date()) {
+        guard !ProviderReportMode.isActive else { return }
         self.lock.withLock {
             self.purgeLegacyAndExpiredEntries(now: now)
             let key = self.blockedUntilKey(accessToken: accessToken)
@@ -43,6 +45,7 @@ enum ClaudeOAuthUsageRateLimitGate {
     }
 
     static func recordSuccess(accessToken: String, now: Date = Date()) {
+        guard !ProviderReportMode.isActive else { return }
         self.lock.withLock {
             self.purgeLegacyAndExpiredEntries(now: now)
             UserDefaults.standard.removeObject(forKey: self.blockedUntilKey(accessToken: accessToken))

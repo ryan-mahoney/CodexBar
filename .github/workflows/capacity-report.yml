@@ -2,7 +2,7 @@ name: Capacity report
 
 on:
   push:
-    branches: [capacity-report]
+    branches: [main, capacity-report]
   workflow_dispatch:
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
         run: swift build --product CodexBarCLI
       - name: Offline report tests
         run: >-
-          swift test --filter
+          swift test --no-parallel --filter
           'CapacityReport|DeepSeekUsageFetcherTests|QwenCloudProviderTests|AlibabaTokenPlanProviderTests|ZaiPlugin|ClaudeOAuthUsageRateLimitGateLinuxTests|CLIGuardDecisionTests|ProviderHTTP'
       - name: Repository checks
         run: make check

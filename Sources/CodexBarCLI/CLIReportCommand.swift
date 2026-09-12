@@ -118,13 +118,14 @@ extension CodexBarCLI {
         timeout: TimeInterval) async -> [ReportRow]
     {
         do {
-            let configured = config.providerConfig(for: request.provider)?.tokenAccounts?.accounts ?? []
+            let configured = config.providerConfig(for: request.provider.instanceID)?.tokenAccounts?.accounts ?? []
             let context = try TokenAccountCLIContext(
                 selection: TokenAccountCLISelection(
                     label: label,
                     index: nil,
                     allAccounts: label == nil && !configured.isEmpty),
-                config: config, verbose: false)
+                config: config,
+                verbose: false)
             let accounts = try context.resolvedAccounts(for: request.provider)
             let visible = request.provider == .codex && label == nil
                 ? context.visibleCodexAccounts().visibleAccounts : []
@@ -146,7 +147,7 @@ extension CodexBarCLI {
                         context: context,
                         timeout: timeout)
                 }
-                let join = BoundedTaskJoin(sourceTask: task)
+                let join = BoundedTaskJoin<ReportRow>(sourceTask: task)
                 switch await join.value(joinGrace: .seconds(timeout)) {
                 case let .value(row): rows.append(row)
                 case .failure: rows.append(.failure(request, account: name, reason: "fetch failed"))
@@ -170,7 +171,9 @@ extension CodexBarCLI {
     {
         let provider = request.provider
         let environment = context.environment(
-            base: ProcessInfo.processInfo.environment, provider: provider, account: account,
+            base: ProcessInfo.processInfo.environment,
+            provider: provider,
+            account: account,
             codexActiveSourceOverride: visibleAccount?.selectionSource)
         let name = account?.label ?? visibleAccount?.menuDisplayName ?? "current"
         let detection = BrowserDetection()
@@ -178,14 +181,21 @@ extension CodexBarCLI {
         let source = context.effectiveSourceMode(base: base, provider: provider, account: account)
         let fetcher = UsageFetcher()
         let fetchContext = ProviderFetchContext(
-            runtime: .cli, sourceMode: source, includeCredits: false, includeOptionalUsage: false,
-            webTimeout: timeout, webDebugDumpHTML: false, verbose: false, env: environment,
+            runtime: .cli,
+            sourceMode: source,
+            includeCredits: false,
+            includeOptionalUsage: false,
+            webTimeout: timeout,
+            webDebugDumpHTML: false,
+            verbose: false,
+            env: environment,
             settings: context.settingsSnapshot(
                 for: provider,
                 account: account,
                 codexActiveSourceOverride: visibleAccount?.selectionSource),
             fetcher: context.fetcher(base: fetcher, provider: provider, env: environment),
-            claudeFetcher: ClaudeUsageFetcher(browserDetection: detection), browserDetection: detection,
+            claudeFetcher: ClaudeUsageFetcher(browserDetection: detection),
+            browserDetection: detection,
             selectedTokenAccountID: account?.id,
             tokenAccountTokenUpdater: context.tokenUpdater(for: account),
             providerManualTokenUpdater: context.manualTokenUpdater())

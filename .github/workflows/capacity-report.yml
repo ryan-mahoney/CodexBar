@@ -34,7 +34,11 @@ jobs:
       - name: Build CLI
         run: swift build --product CodexBarCLI
       - name: Offline report tests
-        run: swift test --filter CapacityReport
+        run: >-
+          swift test --filter
+          'CapacityReport|DeepSeekUsageFetcherTests|QwenCloudProviderTests|AlibabaTokenPlanProviderTests|ZaiPlugin|ClaudeOAuthUsageRateLimitGateLinuxTests|CLIGuardDecisionTests|ProviderHTTP'
+      - name: Repository checks
+        run: make check
       - name: Offline command checks
         run: |
           .build/debug/CodexBarCLI report --help

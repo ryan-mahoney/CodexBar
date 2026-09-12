@@ -53,6 +53,7 @@ jobs:
           cp .build/debug/CodexBarCLI report-cli/codexbar
           cp -R .build/debug/CodexBar_CodexBarCore.bundle report-cli/
           cp LICENSE report-cli/
+          CODEXBAR_RESOURCE_SMOKE=1 ./report-cli/codexbar
           tar -czf capacity-report-macos-arm64.tar.gz report-cli
       - uses: actions/upload-artifact@v4
         with:

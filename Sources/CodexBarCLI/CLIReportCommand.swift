@@ -39,6 +39,17 @@ struct ReportCollector: Sendable {
     }
 }
 
+struct ReportReadDependencies: Sendable {
+    let environment: [String: String]
+    let fetch: @Sendable (UsageProvider, ProviderFetchContext) async -> ProviderFetchOutcome
+
+    static var live: Self {
+        Self(environment: ProcessInfo.processInfo.environment, fetch: { provider, context in
+            await CodexBarCLI.fetchProviderUsage(provider: provider, context: context)
+        })
+    }
+}
+
 extension CodexBarCLI {
     // These integrations were inspected for the one-shot, no-response-retention path.
     static let reportSubscriptions: Set<UsageProvider> = [.codex, .claude, .zai, .qwencloud, .alibabatokenplan]
@@ -80,6 +91,11 @@ extension CodexBarCLI {
             if values.options["account"] != nil, requests.count != 1 {
                 throw CLIArgumentError("--account requires one provider.")
             }
+            if let label = values.options["account"]?.last,
+               label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            {
+                throw CLIArgumentError("--account requires a non-empty label.")
+            }
         } catch {
             self.exit(code: .usage, message: error.localizedDescription, kind: .args)
         }
@@ -111,11 +127,12 @@ extension CodexBarCLI {
         self.platformExit(report.isComplete ? 0 : 1)
     }
 
-    private static func reportRows(
+    static func reportRows(
         request: ReportRequest,
         config: CodexBarConfig,
         label: String?,
-        timeout: TimeInterval) async -> [ReportRow]
+        timeout: TimeInterval,
+        dependencies: ReportReadDependencies = .live) async -> [ReportRow]
     {
         do {
             let configured = config.providerConfig(for: request.provider.instanceID)?.tokenAccounts?.accounts ?? []
@@ -125,7 +142,8 @@ extension CodexBarCLI {
                     index: nil,
                     allAccounts: label == nil && !configured.isEmpty),
                 config: config,
-                verbose: false)
+                verbose: false,
+                baseEnvironment: dependencies.environment)
             let accounts = try context.resolvedAccounts(for: request.provider)
             let visible = request.provider == .codex && label == nil
                 ? context.visibleCodexAccounts().visibleAccounts : []
@@ -142,10 +160,10 @@ extension CodexBarCLI {
                 let task = Task<ReportRow, Error> {
                     await self.reportFetch(
                         request: request,
-                        account: account,
-                        visibleAccount: visibleAccount,
+                        selection: (account, visibleAccount),
                         context: context,
-                        timeout: timeout)
+                        timeout: timeout,
+                        dependencies: dependencies)
                 }
                 let join = BoundedTaskJoin<ReportRow>(sourceTask: task)
                 switch await join.value(joinGrace: .seconds(timeout)) {
@@ -164,14 +182,15 @@ extension CodexBarCLI {
 
     private static func reportFetch(
         request: ReportRequest,
-        account: ProviderTokenAccount?,
-        visibleAccount: CodexVisibleAccount?,
+        selection: (account: ProviderTokenAccount?, visibleAccount: CodexVisibleAccount?),
         context: TokenAccountCLIContext,
-        timeout: TimeInterval) async -> ReportRow
+        timeout: TimeInterval,
+        dependencies: ReportReadDependencies) async -> ReportRow
     {
+        let (account, visibleAccount) = selection
         let provider = request.provider
         let environment = context.environment(
-            base: ProcessInfo.processInfo.environment,
+            base: dependencies.environment,
             provider: provider,
             account: account,
             codexActiveSourceOverride: visibleAccount?.selectionSource)
@@ -179,7 +198,7 @@ extension CodexBarCLI {
         let detection = BrowserDetection()
         let base = context.preferredSourceMode(for: provider)
         let source = context.effectiveSourceMode(base: base, provider: provider, account: account)
-        let fetcher = UsageFetcher()
+        let fetcher = UsageFetcher(environment: environment)
         let fetchContext = ProviderFetchContext(
             runtime: .cli,
             sourceMode: source,
@@ -199,7 +218,7 @@ extension CodexBarCLI {
             selectedTokenAccountID: account?.id,
             tokenAccountTokenUpdater: context.tokenUpdater(for: account),
             providerManualTokenUpdater: context.manualTokenUpdater())
-        let outcome = await self.fetchProviderUsage(provider: provider, context: fetchContext)
+        let outcome = await dependencies.fetch(provider, fetchContext)
         switch outcome.result {
         case let .success(result):
             return .project(result, request: request, account: name)

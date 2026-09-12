@@ -20,6 +20,106 @@ struct CapacityReportTests {
             strategyKind: .apiToken)
     }
 
+    private static func tokenConfig() -> CodexBarConfig {
+        let accounts = ["first", "second"].map { label in
+            ProviderTokenAccount(
+                id: UUID(),
+                label: label,
+                token: "fixture-\(label)",
+                addedAt: 0,
+                lastUsed: nil)
+        }
+        return CodexBarConfig(providers: [ProviderConfig(
+            id: .zai,
+            source: .api,
+            tokenAccounts: ProviderTokenAccountData(
+                version: 1,
+                accounts: accounts,
+                activeIndex: 1))])
+    }
+
+    @Test
+    func `report reads every configured account through the existing credential resolver`() async {
+        let config = Self.tokenConfig()
+        let dependencies = ReportReadDependencies(environment: [:], fetch: { provider, context in
+            #expect(provider == .zai)
+            #expect(ProviderReportMode.isActive)
+            #expect(!context.includeOptionalUsage)
+            #expect(!context.includeCredits)
+            #expect(!context.webDebugDumpHTML)
+            #expect(!context.persistsCLISessions)
+            #expect(context.sourceMode == .api)
+            let token = context.env["Z_AI_API_KEY"]
+            #expect(token == "fixture-first" || token == "fixture-second")
+            let percent = token == "fixture-first" ? 25.0 : 70.0
+            let usage = UsageSnapshot(
+                primary: RateWindow(
+                    usedPercent: percent,
+                    windowMinutes: 300,
+                    resetsAt: Self.now,
+                    resetDescription: nil),
+                secondary: nil,
+                updatedAt: Self.now)
+            return ProviderFetchOutcome(result: .success(Self.result(usage)), attempts: [])
+        })
+        let rows = await ProviderReportMode.$isActive.withValue(true) {
+            await CodexBarCLI.reportRows(
+                request: .init(provider: .zai, kind: .subscription),
+                config: config,
+                label: nil,
+                timeout: 1,
+                dependencies: dependencies)
+        }
+        #expect(rows.map(\.account) == ["first", "second"])
+        #expect(rows.map { $0.windows.first?.usedPercent } == [25, 70])
+        #expect(config.providerConfig(for: .zai)?.tokenAccounts?.activeIndex == 1)
+    }
+
+    @Test
+    func `account selection failures never fall back to another account`() async {
+        let dependencies = ReportReadDependencies(environment: [:], fetch: { _, _ in
+            Issue.record("A missing account must not fetch another account")
+            return ProviderFetchOutcome(result: .failure(CLIArgumentError("fixture")), attempts: [])
+        })
+        let rows = await CodexBarCLI.reportRows(
+            request: .init(provider: .zai, kind: .subscription),
+            config: Self.tokenConfig(),
+            label: "missing",
+            timeout: 1,
+            dependencies: dependencies)
+        #expect(rows.count == 1)
+        #expect(rows.first?.account == "missing")
+        #expect(rows.first?.unavailable == "account not configured")
+    }
+
+    @Test
+    func `timeouts remain visible and raw provider errors never reach the report`() async {
+        let request = ReportRequest(provider: .zai, kind: .subscription)
+        let slow = ReportReadDependencies(environment: [:], fetch: { _, _ in
+            try? await Task.sleep(for: .seconds(10))
+            return ProviderFetchOutcome(result: .failure(CLIArgumentError("SECRET_RESPONSE_BODY")), attempts: [])
+        })
+        let rows = await CodexBarCLI.reportRows(
+            request: request,
+            config: Self.tokenConfig(),
+            label: "first",
+            timeout: 0.01,
+            dependencies: slow)
+        #expect(rows.first?.unavailable == "timeout")
+        let failed = ReportReadDependencies(environment: [:], fetch: { _, _ in
+            ProviderFetchOutcome(result: .failure(CLIArgumentError("SECRET_RESPONSE_BODY")), attempts: [])
+        })
+        let failedRows = await CodexBarCLI.reportRows(
+            request: request,
+            config: Self.tokenConfig(),
+            label: "second",
+            timeout: 1,
+            dependencies: failed)
+        let report = CapacityReport(checkedAt: Self.now, accounts: rows + failedRows)
+        #expect(!report.isComplete)
+        #expect(!report.text().contains("SECRET_RESPONSE_BODY"))
+    }
+
     @Test
     func `report is a separate command with explicit selections`() throws {
         let invocation = try Program(descriptors: CodexBarCLI.commandDescriptors()).resolve(argv: [

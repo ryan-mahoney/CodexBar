@@ -85,6 +85,7 @@ enum ClaudeCLIUsageSpawnThrottle {
     /// Returns the cached result when it is younger than `minimumBackgroundSpawnInterval`.
     /// A stale or missing entry returns nil (and a stale entry is removed).
     static func cachedResult(for key: Key) -> ProviderFetchResult? {
+        guard !ProviderReportMode.isActive else { return nil }
         let now = self.now
         guard let entry = self.store.lookup(key, now: now) else { return nil }
         let ageSeconds = max(0, now.timeIntervalSince(entry.recordedAt))
@@ -95,6 +96,7 @@ enum ClaudeCLIUsageSpawnThrottle {
     }
 
     static func record(_ result: ProviderFetchResult, for key: Key) {
+        guard !ProviderReportMode.isActive else { return }
         self.store.insert(Entry(result: result, recordedAt: self.now), for: key)
     }
 

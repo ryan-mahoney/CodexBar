@@ -92,15 +92,19 @@ struct CapacityReport: Codable, Sendable {
         !self.accounts.isEmpty && self.accounts.allSatisfy { $0.unavailable == nil }
     }
 
-    func text() -> String {
-        let date = ISO8601DateFormatter()
-        var lines = ["Checked: \(date.string(from: self.checkedAt))"]
+    func text(
+        timeZone: TimeZone = .current,
+        command: String = "codexbar",
+        config: CodexBarConfig = .makeDefault()) -> String
+    {
+        let dates = ReportDatePresentation(now: self.checkedAt, timeZone: timeZone)
+        var lines = ["Checked: \(dates.timestamp(self.checkedAt))"]
         for row in self.accounts {
             let name = "\(row.provider) [\(Self.safeText(row.account))]"
             for window in row.windows {
                 let duration = window.windowMinutes.map { " (\($0) min)" } ?? ""
                 let used = window.usedPercent.map { String(format: "%.1f%% used", $0) } ?? "unavailable"
-                let reset = window.resetsAt.map { date.string(from: $0) } ?? "unknown"
+                let reset = window.resetsAt.map { dates.reset($0) } ?? "unknown"
                 lines.append("\(name): \(Self.safeText(window.name))\(duration), \(used), resets \(reset)")
             }
             for balance in row.balances {
@@ -109,6 +113,14 @@ struct CapacityReport: Codable, Sendable {
             if let reason = row.unavailable {
                 lines.append("\(name): \(row.kind.rawValue) unavailable (\(reason))")
             }
+        }
+        var explained = Set<String>()
+        for row in self.accounts where row.unavailable != nil && explained.insert(row.provider).inserted {
+            let guidance = ReportSetupGuidance.lines(provider: row.provider, command: command, config: config)
+            guard !guidance.isEmpty else { continue }
+            lines.append("")
+            lines.append("\(row.provider) — setup / troubleshooting:")
+            lines += guidance.map { "  \($0)" }
         }
         return lines.joined(separator: "\n")
     }

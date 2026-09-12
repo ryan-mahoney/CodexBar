@@ -122,7 +122,7 @@ extension CodexBarCLI {
         if values.flags.contains("json") {
             self.printJSON(report, pretty: true)
         } else {
-            print(report.text())
+            print(report.text(command: CommandLine.arguments[0], config: config))
         }
         self.platformExit(report.isComplete ? 0 : 1)
     }
@@ -224,7 +224,10 @@ extension CodexBarCLI {
             return .project(result, request: request, account: name)
         case .failure:
             // Raw provider diagnostics can contain response bodies or account credentials.
-            return .failure(request, account: name, reason: "fetch failed. Check provider sign-in")
+            return .failure(
+                request,
+                account: name,
+                reason: "request failed: credentials, network, or provider response")
         }
     }
 

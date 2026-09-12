@@ -61,14 +61,15 @@ enum ReportSetupGuidance {
                 ? "https://bigmodel.cn/usercenter/proj-mgmt/apikeys"
                 : "https://z.ai/manage-apikey/apikey-list"
             return Self.apiKeyLines(provider: provider, executable: executable, url: url) + [
-                "Use a key from the account with your Coding Plan. Browser sign-in alone is not used by this integration.",
+                "Use a key from the account with your Coding Plan. This integration does not use browser sign-in.",
                 "For a saved token account, update that account's key instead of the provider-wide key.",
             ]
         case "deepseek":
-            return Self.apiKeyLines(
+            let lines = Self.apiKeyLines(
                 provider: provider,
                 executable: executable,
-                url: "https://platform.deepseek.com/api_keys") + [
+                url: "https://platform.deepseek.com/api_keys")
+            return lines + [
                 "The API key is enough for the balance report. Chrome session access is not required.",
             ]
         case "qwencloud":
@@ -81,7 +82,8 @@ enum ReportSetupGuidance {
             let region = config.providerConfig(for: UsageProvider.alibabatokenplan.instanceID)?.sanitizedRegion
                 .flatMap(AlibabaTokenPlanAPIRegion.init(rawValue:)) ?? .chinaMainland
             return [
-                "Configured region: \(region.rawValue). Open \(region.dashboardURL.absoluteString) in your signed-in Chrome profile.",
+                "Configured region: \(region.rawValue).",
+                "Open \(region.dashboardURL.absoluteString) in your signed-in Chrome profile.",
                 "The region must match your account and plan: intl, cn, intl-personal, or cn-personal.",
                 "Set providers[].region for id alibabatokenplan in your CodexBar configuration if it does not match.",
             ] + Self.cookieLines(variable: "ALIBABA_TOKEN_PLAN_COOKIE", request: "the token-plan quota/usage request")
@@ -110,7 +112,8 @@ enum ReportSetupGuidance {
             "For a manual handoff, open Chrome DevTools > Network, then reload the page.",
             "Select \(request). Under Headers > Request Headers, copy only the Cookie value.",
             "In this terminal, run: export \(variable)=\"$(pbpaste)\"",
-            "Run the report again in this terminal. The cookie stays in this shell until you unset it or close the terminal.",
+            "Run the report again in this terminal.",
+            "The cookie stays in this shell until you unset it or close the terminal.",
             "Treat the cookie as a password. Do not paste it into chat. Repeat the handoff when the session expires.",
             "If the reading still fails, check the selected plan, region, network, and provider service.",
         ]

@@ -171,6 +171,7 @@ defineProvider({
     const tokenLimits = limits
       .filter((item) => item.raw.type === "TOKENS_LIMIT" || item.raw.type === "CREDIT_LIMIT")
       .sort((a, b) => (a.windowMinutes || Number.MAX_SAFE_INTEGER) - (b.windowMinutes || Number.MAX_SAFE_INTEGER));
+    if (reportOnly && tokenLimits.length === 0) throw new Error("z.ai subscription quota is unavailable");
     const timeLimit = limits.filter((item) => item.raw.type === "TIME_LIMIT").pop() || null;
     const tokenLimit = tokenLimits.length ? tokenLimits[tokenLimits.length - 1] : null;
     const sessionLimit = tokenLimits.length >= 2 ? tokenLimits[0] : null;

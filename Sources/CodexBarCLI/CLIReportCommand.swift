@@ -224,7 +224,7 @@ extension CodexBarCLI {
             return .project(result, request: request, account: name)
         case .failure:
             // Raw provider diagnostics can contain response bodies or account credentials.
-            return .failure(request, account: name, reason: "fetch failed; check provider sign-in")
+            return .failure(request, account: name, reason: "fetch failed. Check provider sign-in")
         }
     }
 

@@ -42,8 +42,8 @@ struct CapacityReportZaiTests {
         #expect(await requests.paths == ["/api/monitor/usage/quota/limit"])
     }
 
-    @Test
-    func `report plugin rejects an empty quota list`() async throws {
+    @Test(arguments: ["[]", #"[{"type":"TIME_LIMIT","unit":5,"number":1,"percentage":12}]"#])
+    func `report plugin requires a subscription quota`(limits: String) async throws {
         let runtime = try ProviderPluginRuntime(
             bundledPlugin: "zai",
             transport: ProviderHTTPTransportHandler { request in
@@ -53,7 +53,8 @@ struct CapacityReportZaiTests {
                     statusCode: 200,
                     httpVersion: nil,
                     headerFields: [:]))
-                return (Data(#"{"success":true,"code":200,"data":{"limits":[]}}"#.utf8), response)
+                let body = "{\"success\":true,\"code\":200,\"data\":{\"limits\":\(limits)}}"
+                return (Data(body.utf8), response)
             })
         await #expect(throws: (any Error).self) {
             try await runtime.fetchUsage(

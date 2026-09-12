@@ -1,6 +1,112 @@
-# CodexBar 🎚️ — May your tokens never run out.
+# Current AI Provider Capacity
 
-This fork adds a [current capacity report](REPORT.md): subscription usage and monetary balances, with no retained report data.
+A local dashboard for one question: **what capacity do I have available right now?**
+
+This is a fork of [steipete/CodexBar](https://github.com/steipete/CodexBar), not a replacement built from scratch.
+CodexBar already connects to the providers and handles their sign-ins. We kept that code and added a smaller way to use it.
+
+## What this fork adds
+
+- A `report` command that prints current allowances, reset times, and cash balances as text or JSON.
+- A browser dashboard that fetches a new report every 15 minutes.
+- An OpenRouter account-balance request alongside the CodexBar report.
+- Optional access to existing Z.ai, DeepSeek, and OpenRouter API keys in OpenCode.
+
+The dashboard displays Codex, Claude, Z.ai, and Qwen Cloud subscription allowances.
+It displays DeepSeek and OpenRouter balances in USD. It does not request Alibaba Token Plan.
+
+The rows show remaining allowance, not usage. Weekly reset times have their own column.
+Amber marks weekly allowances that reset soon. Short-window reset times stay beside the window duration, without an urgency color.
+
+![Current AI Provider Capacity: four subscription rows, weekly resets, and two prepaid balances](docs/capacity-dashboard.png)
+
+*Fresh capture of the dashboard with example data. The screenshot contains no personal account details or real balances.*
+
+## Run the dashboard
+
+Requirements: macOS, Python 3.11 or later, and this fork's report executable.
+A source build also requires Swift 6.2 or later and the macOS SDK.
+
+Clone this fork:
+
+```bash
+git clone https://github.com/ryan-mahoney/CodexBar.git
+cd CodexBar
+```
+
+Build the report executable:
+
+```bash
+swift build --product CodexBarCLI
+```
+
+Start the web server:
+
+```bash
+python3 -m ai_capacity
+```
+
+Open **[http://localhost:8787/](http://localhost:8787/)**.
+
+No Python package installation or frontend build is required.
+The styles and Roboto font are included. The browser does not load external scripts or fonts.
+
+If you already built this checkout, only the final command is needed.
+The server finds `.build/debug/CodexBarCLI` or the existing `.build/report-current/report-cli/codexbar` artifact.
+
+For another executable path or port, run:
+
+```bash
+python3 -m ai_capacity --codexbar /absolute/path/to/report-cli/codexbar --port 8787
+```
+
+Keep the executable's resource bundle beside it. The upstream Homebrew build does not include this fork's `report` command.
+A successful [Capacity report workflow](https://github.com/ryan-mahoney/CodexBar/actions/workflows/capacity-report.yml) also supplies a macOS ARM64 CLI artifact.
+
+Press Ctrl+C to stop the server. It does not install a login service or start automatically after a reboot.
+
+## Connect your accounts
+
+The report reuses existing CodexBar account configuration, CLI sign-ins, and browser-cookie access.
+It does not ask for your passwords in the browser.
+
+For Z.ai, DeepSeek, and OpenRouter, the dashboard can read API keys already stored in `~/.local/share/opencode/auth.json`.
+Explicit environment variables take precedence. Use `--no-opencode` to disable this fallback.
+
+Missing sign-ins, expired cookies, or failed provider requests appear as unavailable, never as zero.
+The page provides access instructions for failed readings.
+See the [dashboard guide](ai_capacity/README.md) for key selection, Qwen cookie access, and refresh behavior.
+See the [report guide](REPORT.md) for the standalone command and provider setup.
+
+## What it stores
+
+The server keeps one report in memory. It does not save usage history, reports, or request logs.
+Existing authentication storage and credential refresh remain in place.
+Keys never go to the dashboard browser.
+
+The server listens only on localhost. It rejects cross-site browser requests.
+Other programs on the same computer can access the local port. Do not expose it through a public proxy.
+
+## Check the dashboard
+
+These checks use synthetic data. They do not contact providers or read account credentials.
+
+```bash
+python3 -m unittest discover -s Tests/CapacityDashboardTests -p 'test_*.py' -v
+node --check ai_capacity/static/app.js
+```
+
+The [dashboard guide](ai_capacity/README.md#readme-screenshot) also explains how to serve the example data used for the screenshot.
+
+## Original CodexBar application
+
+The original menu-bar application, provider integrations, and other commands remain in this repository.
+Their broader capabilities are separate from the small dashboard described here.
+
+<details>
+<summary>Original application documentation</summary>
+
+# CodexBar 🎚️ — May your tokens never run out.
 
 > Every AI coding limit, in your menu bar.
 
@@ -302,3 +408,5 @@ Inspired by [ccusage](https://github.com/ryoppippi/ccusage) (MIT), specifically 
 
 ## License
 MIT • Peter Steinberger ([steipete](https://twitter.com/steipete))
+
+</details>

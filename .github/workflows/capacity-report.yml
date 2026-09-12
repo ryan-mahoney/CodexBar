@@ -33,6 +33,10 @@ jobs:
           restore-keys: capacity-report-macos-${{ hashFiles('Package.resolved') }}-
       - name: Build CLI
         run: swift build --product CodexBarCLI
+      - name: Offline dashboard checks
+        run: |
+          python3 -m unittest discover -s Tests/CapacityDashboardTests -p 'test_*.py' -v
+          node --check ai_capacity/static/app.js
       - name: Offline report tests
         run: >-
           swift test --no-parallel --filter

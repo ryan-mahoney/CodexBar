@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Current AI Provider Capacity</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a href="#subscriptions" class="skip sr-only focus:not-sr-only focus:fixed focus:p-4 focus:z-10">Skip to allowances</a>
+  <main class="mx-auto max-w-6xl px-5 py-8 sm:px-10 sm:py-12">
+    <header class="border-b-2 strong-line pb-7">
+      <h1 class="text-3xl font-medium tracking-tight">Current AI Provider Capacity</h1>
+    </header>
+    <div class="status-row py-7 text-xs muted numbers">
+      <p id="checked">No report yet</p>
+      <p id="schedule">Auto-refresh: 15 minutes</p>
+      <button id="refresh" type="button" class="control">Refresh report</button>
+    </div>
+    <p id="notice" class="mb-5 text-sm" role="status">Fetching provider data…</p>
+    <section id="subscriptions" aria-labelledby="subscriptions-title" class="border-t line pt-5">
+      <div class="mb-3 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 id="subscriptions-title" class="section-heading">Subscription allowance</h2>
+          <p class="mt-1 text-xs muted">Remaining · 0–100% of each plan’s allowance · Weekly reset <span class="legend-soon">≤6h</span> / <span class="legend-today">≤24h</span></p>
+        </div>
+        <div id="order-control" class="flex items-center gap-3">
+          <label for="order" class="text-xs muted">Order by</label>
+          <select id="order" class="control text-xs">
+            <option value="name">Provider name</option>
+            <option value="remaining">Weekly allowance left</option>
+            <option value="reset">Weekly reset soonest</option>
+          </select>
+        </div>
+      </div>
+      <div id="report" aria-busy="true"><div class="empty-space"><p>Fetching provider data…</p><div class="skeleton" aria-hidden="true"></div></div></div>
+      <p id="sort-status" class="sr-only" role="status"></p>
+      <details id="extra-limits" class="border-t line py-1" hidden>
+        <summary class="w-fit text-xs muted">Additional limits <span id="extra-count" class="numbers"></span></summary>
+        <div id="extras" class="extra-grid mb-5 text-sm"></div>
+      </details>
+    </section>
+    <section aria-labelledby="balance-title" class="mt-7 border-t-2 strong-line pt-5">
+      <h2 id="balance-title" class="section-heading">Prepaid API balance</h2>
+      <div id="balance"><p class="muted">Fetching balances…</p></div>
+    </section>
+    <footer class="mt-8 border-t line pt-4 text-xs muted">
+      <p id="timezone"></p>
+      <p class="mt-2">Plan percentages are not equivalent token quantities. Unreported limits remain unknown.</p>
+      <p class="mt-2">Local report · Memory only · No usage history</p>
+    </footer>
+    <noscript><p class="mt-8">Enable JavaScript to fetch and refresh the local report.</p></noscript>
+  </main>
+</body>
+</html>

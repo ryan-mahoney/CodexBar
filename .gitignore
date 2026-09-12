@@ -36,6 +36,8 @@ debug_*.swift
 .swiftpm-cache/
 .tmp-clang/
 __pycache__/
+.data/
+.venv/
 
 # Debug/analysis docs
 docs/*-analysis.md

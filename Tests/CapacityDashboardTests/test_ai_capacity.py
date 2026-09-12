@@ -42,7 +42,32 @@ class ReportTests(unittest.TestCase):
         with patch.dict(os.environ, {'CODEXBAR_BIN':'/explicit/codexbar'}, clear=True):
             self.assertEqual(default_binary(), '/explicit/codexbar')
         with patch.dict(os.environ, {}, clear=True), patch('ai_capacity.server.Path.is_file', return_value=True):
-            self.assertEqual(Path(default_binary()), Path(__file__).resolve().parents[2] / '.build/debug/CodexBarCLI')
+            self.assertEqual(Path(default_binary()), Path(__file__).resolve().parents[2] / 'report-cli/codexbar')
+
+    def test_source_checkout_falls_back_to_local_build(self):
+        with patch.dict(os.environ, {}, clear=True), patch('ai_capacity.server.Path.is_file', side_effect=lambda: False), patch('ai_capacity.server.shutil.which', return_value='/on-path/codexbar'):
+            self.assertEqual(default_binary(), '/on-path/codexbar')
+
+    def test_help_and_version_do_not_read_credentials_or_start_collection(self):
+        from ai_capacity.server import main
+        for option in ('--help', '--version'):
+            with self.subTest(option=option), patch('sys.argv', ['ai-capacity', option]), patch('ai_capacity.server.Collector') as collect, patch('ai_capacity.server.webbrowser.open') as browser:
+                with self.assertRaises(SystemExit) as result:
+                    main()
+                self.assertEqual(result.exception.code, 0)
+                collect.assert_not_called()
+                browser.assert_not_called()
+
+    def test_launch_opens_browser_unless_disabled(self):
+        from ai_capacity.server import main
+        for no_open in (False, True):
+            with self.subTest(no_open=no_open), patch('sys.argv', ['ai-capacity', '--codexbar', '/fixture/codexbar'] + (['--no-open'] if no_open else [])), patch('ai_capacity.server.Path.is_file', return_value=True), patch('ai_capacity.server.os.access', return_value=True), patch('ai_capacity.server.Snapshot') as state, patch('ai_capacity.server.DashboardServer') as server, patch('ai_capacity.server.webbrowser.open') as browser:
+                server.return_value.serve_forever.side_effect = KeyboardInterrupt
+                main()
+                self.assertEqual(browser.call_count, 0 if no_open else 1)
+                server.assert_called_once_with(('127.0.0.1', 8787), state.return_value)
+                server.return_value.server_close.assert_called_once()
+                state.return_value.stop.assert_called_once()
 
     def test_zero_is_data_and_missing_is_unknown(self):
         report = normalize_report(sample())

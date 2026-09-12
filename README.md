@@ -22,7 +22,59 @@ Amber marks weekly allowances that reset soon. Short-window reset times stay bes
 
 *Fresh capture of the dashboard with example data. The screenshot contains no personal account details or real balances.*
 
-## Run the dashboard
+## Install and run
+
+Requires an Apple Silicon Mac, macOS 14 or later, and [Homebrew](https://brew.sh).
+The first Homebrew release does not support Intel Macs or Linux.
+
+Install the dashboard:
+
+```bash
+brew install ryan-mahoney/tap/ai-capacity
+```
+
+Run it from any directory:
+
+```bash
+ai-capacity
+```
+
+The command opens [http://localhost:8787/](http://localhost:8787/) in your browser.
+Homebrew installs Python, the dashboard, and the prebuilt report executable together.
+No repository checkout, Swift compiler, or executable path is required.
+Provider sign-ins and macOS Keychain permissions still apply.
+
+Keep the terminal open. Press Ctrl+C to stop the server.
+The command does not install a background service or start automatically after a reboot.
+
+For another port, or to leave the browser closed:
+
+```bash
+ai-capacity --port 8789 --no-open
+```
+
+If port 8787 is already in use, stop the old dashboard or select another port.
+
+### Update
+
+```bash
+brew update
+brew upgrade ai-capacity
+```
+
+After an update, stop the running dashboard with Ctrl+C. Then run `ai-capacity` again.
+
+### Report command
+
+The bundled report executable also has a command on your PATH:
+
+```bash
+ai-capacity-report report --help
+```
+
+This name keeps it separate from an upstream `codexbar` installation.
+
+## Run from source (development)
 
 Requirements: macOS, Python 3.11 or later, and this fork's report executable.
 A source build also requires Swift 6.2 or later and the macOS SDK.
@@ -53,6 +105,7 @@ The styles and Roboto font are included. The browser does not load external scri
 
 If you already built this checkout, only the final command is needed.
 The server finds `.build/debug/CodexBarCLI` or the existing `.build/report-current/report-cli/codexbar` artifact.
+The Homebrew installation uses its bundled executable instead.
 
 For another executable path or port, run:
 

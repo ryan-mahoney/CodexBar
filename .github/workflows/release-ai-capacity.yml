@@ -1,0 +1,54 @@
+name: Release AI capacity
+
+on:
+  push:
+    tags: ['ai-capacity-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: macos-26
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      CODEXBAR_SUPPRESS_TEST_KEYCHAIN_ACCESS: '1'
+      CODEXBAR_TEST_CODEX_FILE_ISOLATION: '1'
+      CODEXBAR_TEST_SESSION_FILE_ISOLATION: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select toolchain
+        run: |
+          for candidate in /Applications/Xcode_26.3.app /Applications/Xcode_26.2.app; do
+            if [ -d "$candidate" ]; then
+              echo "DEVELOPER_DIR=$candidate/Contents/Developer" >> "$GITHUB_ENV"
+              break
+            fi
+          done
+      - name: Offline dashboard checks
+        run: |
+          python3 -m unittest discover -s Tests/CapacityDashboardTests -p 'test_*.py' -v
+          node --check ai_capacity/static/app.js
+      - name: Check release version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(python3 -c 'from ai_capacity import __version__; print(__version__)')
+          test "$GITHUB_REF_NAME" = "ai-capacity-v$version"
+      - name: Build and package
+        run: bash Scripts/package_ai_capacity.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-capacity-macos-arm64
+          path: .build/ai-capacity-*-macos-arm64.tar.gz
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/ai-capacity-v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" .build/ai-capacity-*-macos-arm64.tar.gz \
+            --repo "$GITHUB_REPOSITORY" --verify-tag --latest=false \
+            --title "AI capacity ${GITHUB_REF_NAME#ai-capacity-v}" \
+            --notes "Prebuilt AI capacity dashboard for Apple Silicon Macs. Includes the report executable, its resources, and dashboard assets. Python is supplied by the Homebrew formula."

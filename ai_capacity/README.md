@@ -8,13 +8,29 @@ The CodexBar command still uses its existing authentication storage and credenti
 
 ## Start
 
+For the Homebrew installation, run these commands from any directory:
+
+```bash
+brew install ryan-mahoney/tap/ai-capacity
+ai-capacity
+```
+
+Homebrew supplies Python and the prebuilt report executable. The command opens the dashboard in your browser.
+This package requires an Apple Silicon Mac and macOS 14 or later.
+Use `ai-capacity --no-open` to leave the browser closed.
+Keep the terminal open. Press Ctrl+C to stop the server.
+
+To update, run `brew update`, then `brew upgrade ai-capacity`. Restart the dashboard after the update.
+
+### Source checkout
+
 From this repository, run:
 
 ```bash
 python3 -m ai_capacity
 ```
 
-Open [http://localhost:8787/](http://localhost:8787/).
+The command opens [http://localhost:8787/](http://localhost:8787/).
 
 The command uses Python 3.11 or later. It requires no Python packages or frontend build.
 The stylesheet contains compiled Tailwind CSS and the Roboto font. The browser requires no external assets.

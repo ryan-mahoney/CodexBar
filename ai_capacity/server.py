@@ -14,9 +14,12 @@ import signal
 import subprocess
 import threading
 import time
+import webbrowser
 from urllib.parse import urlsplit
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from . import __version__
 
 REFRESH_SECONDS = 15 * 60
 SUBSCRIPTIONS = ('codex', 'claude', 'zai', 'qwencloud')
@@ -305,12 +308,15 @@ class Handler(BaseHTTPRequestHandler):
 
 def default_binary():
     root = Path(__file__).resolve().parents[1]
-    candidates = (root / '.build/debug/CodexBarCLI', root / '.build/report-current/report-cli/codexbar')
+    candidates = (root / 'report-cli/codexbar', root / '.build/debug/CodexBarCLI',
+                  root / '.build/report-current/report-cli/codexbar')
     return os.environ.get('CODEXBAR_BIN') or next((str(path) for path in candidates if path.is_file()), None) or shutil.which('codexbar')
 
 
 def main():
     parser = argparse.ArgumentParser(description='Local capacity dashboard. Refreshes provider data every 15 minutes.')
+    parser.add_argument('--version', action='version', version=f'ai-capacity {__version__}')
+    parser.add_argument('--no-open', action='store_true', help='Do not open the dashboard in a browser')
     parser.add_argument('--port', type=int, default=8787)
     parser.add_argument('--codexbar', type=Path, default=default_binary(), help='Path to the CodexBar build with the report command')
     parser.add_argument('--no-opencode', action='store_true', help='Do not read Z.ai, DeepSeek, or OpenRouter keys from OpenCode')
@@ -326,8 +332,14 @@ def main():
     except OSError:
         parser.error('The server could not bind this port. Choose another --port.')
     snapshot.start()
-    print(f'AI capacity: http://localhost:{args.port}/ — refresh every 15 minutes. Ctrl+C stops the server.', flush=True)
+    url = f'http://localhost:{args.port}/'
+    print(f'AI capacity: {url} — refresh every 15 minutes. Ctrl+C stops the server.', flush=True)
     try:
+        if not args.no_open:
+            try:
+                webbrowser.open(url)
+            except webbrowser.Error:
+                print(f'Open {url} in your browser.', flush=True)
         server.serve_forever()
     except KeyboardInterrupt:
         pass

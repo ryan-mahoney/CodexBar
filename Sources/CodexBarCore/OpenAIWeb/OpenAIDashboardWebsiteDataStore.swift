@@ -19,12 +19,19 @@ public enum OpenAIDashboardWebsiteDataStore {
     /// Cached data store instances keyed by normalized email and optional Codex source scope.
     /// Using the same instance ensures stable object identity for WebView cache lookups.
     private static var cachedStores: [String: WKWebsiteDataStore] = [:]
+    private static var reportStores: [String: WKWebsiteDataStore] = [:]
 
     public static func store(
         forAccountEmail email: String?,
         scope: CookieHeaderCache.Scope? = nil) -> WKWebsiteDataStore
     {
-        if ProviderReportMode.isActive { return .nonPersistent() }
+        if ProviderReportMode.isActive {
+            let key = self.storageKey(normalizedEmail: self.normalizeEmail(email) ?? "", scope: scope)
+            if let store = self.reportStores[key] { return store }
+            let store = WKWebsiteDataStore.nonPersistent()
+            self.reportStores[key] = store
+            return store
+        }
         guard let normalized = normalizeEmail(email) else { return .default() }
         let storageKey = self.storageKey(normalizedEmail: normalized, scope: scope)
 

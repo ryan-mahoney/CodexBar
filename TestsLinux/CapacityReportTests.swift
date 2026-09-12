@@ -300,4 +300,48 @@ struct CapacityReportTests {
         #expect(report.text().contains("USD 0.00 remaining"))
         #expect(!report.text().contains("history"))
     }
+
+    @Test
+    func `report mode neither replaces nor reads an existing dashboard cache`() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let path = directory.appendingPathComponent("dashboard.json")
+        let original = Data("existing cache fixture".utf8)
+        try original.write(to: path)
+        let snapshot = OpenAIDashboardSnapshot(
+            signedInEmail: nil,
+            codeReviewRemainingPercent: nil,
+            creditEvents: [],
+            dailyBreakdown: [],
+            usageBreakdown: [],
+            creditsPurchaseURL: nil,
+            updatedAt: Self.now)
+        OpenAIDashboardCacheStore.$cacheURLOverride.withValue(path) {
+            ProviderReportMode.$isActive.withValue(true) {
+                #expect(OpenAIDashboardCacheStore.load() == nil)
+                OpenAIDashboardCacheStore.save(OpenAIDashboardCache(
+                    accountEmail: "fixture@example.test",
+                    snapshot: snapshot))
+                OpenAIDashboardCacheStore.clear()
+            }
+        }
+        #expect(try Data(contentsOf: path) == original)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["dashboard.json"])
+    }
+
+    #if os(macOS)
+    @Test @MainActor
+    func `web report shares an ephemeral store only within the same account`() {
+        ProviderReportMode.$isActive.withValue(true) {
+            let first = OpenAIDashboardWebsiteDataStore.store(forAccountEmail: "first@example.test")
+            let same = OpenAIDashboardWebsiteDataStore.store(forAccountEmail: "first@example.test")
+            let second = OpenAIDashboardWebsiteDataStore.store(forAccountEmail: "second@example.test")
+            #expect(first === same)
+            #expect(first !== second)
+            #expect(!first.isPersistent)
+            #expect(!second.isPersistent)
+        }
+    }
+    #endif
 }

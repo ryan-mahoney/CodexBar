@@ -32,8 +32,8 @@ done
 strip -S "$PAYLOAD/report-cli/codexbar"
 codesign --force --sign - "$PAYLOAD/report-cli/codexbar"
 CODEXBAR_RESOURCE_SMOKE=1 "$PAYLOAD/report-cli/codexbar"
-python3 "$PAYLOAD/launch.py" --version
+python3 -B "$PAYLOAD/launch.py" --version
 "$PAYLOAD/report-cli/codexbar" report --help >/dev/null
 ARCHIVE="$ROOT_DIR/.build/ai-capacity-${VERSION}-macos-arm64.tar.gz"
-COPYFILE_DISABLE=1 tar -czf "$ARCHIVE" -C "$STAGE_DIR" ai-capacity
+COPYFILE_DISABLE=1 tar --exclude='__pycache__' --exclude='*.pyc' -czf "$ARCHIVE" -C "$STAGE_DIR" ai-capacity
 shasum -a 256 "$ARCHIVE"

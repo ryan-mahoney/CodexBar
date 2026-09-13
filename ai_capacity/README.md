@@ -83,7 +83,7 @@ If the provider rejects credit access, use a management key. See the [OpenRouter
 To disable this fallback, run:
 
 ```bash
-python3 -m ai_capacity --no-opencode
+ai-capacity --no-opencode
 ```
 
 An unavailable reading does not mean zero usage or an expired sign-in. Provider outages, account regions, or cookie permissions can also cause unavailable readings.
@@ -92,10 +92,11 @@ The page includes account-specific access instructions for failed reports.
 If Qwen needs a new cookie import, run this command in a terminal:
 
 ```bash
-.build/debug/CodexBarCLI cookie refresh --provider qwencloud --allow-keychain-prompt
+ai-capacity-report cookie refresh --provider qwencloud --allow-keychain-prompt
 ```
 
 Complete the macOS prompt. Then select **Refresh report** in the dashboard.
+For a source checkout, use `python3 -m ai_capacity` and `.build/debug/CodexBarCLI` in place of the installed commands.
 
 ## Refresh behavior
 

@@ -33,8 +33,10 @@ The workflow attaches the archive to a GitHub release. Manual workflow runs crea
 1. Download the archive from the completed release.
 2. Calculate its SHA-256 checksum with `shasum -a 256`.
 3. Update the version, release URL, and checksum in the tap's `Formula/ai-capacity.rb`.
-4. Commit and push the tap changes.
-5. Run the published installation checks:
+4. Remove the previous `bottle` block from the formula.
+5. Commit and push the tap changes.
+6. Run the tap's `Publish bottle` workflow and wait for success.
+7. Run the published installation checks:
 
    ```bash
    brew update
@@ -46,6 +48,8 @@ The workflow attaches the archive to a GitHub release. Manual workflow runs crea
 
 If the package is already installed, use `brew upgrade ai-capacity` instead of `brew install`.
 The formula test uses synthetic data. It must not request real account credentials or contact a provider.
+The tap workflow runs this test on macOS 14 before it publishes a Homebrew bottle and commits its checksum.
+The bottle prevents Homebrew from treating the prebuilt payload as a source build that requires current developer tools.
 
 ## Package layout
 

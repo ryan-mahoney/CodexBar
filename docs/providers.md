@@ -8,7 +8,7 @@ read_when:
 
 # Providers
 
-CodexBar currently registers 69 provider IDs. Some companies expose multiple surfaces, such as Codex vs OpenAI API or
+CodexBar currently registers 70 provider IDs. Some companies expose multiple surfaces, such as Codex vs OpenAI API or
 OpenCode vs OpenCode Go, because the auth source and quota shape differ.
 
 ## Fetch strategies (current)
@@ -18,6 +18,9 @@ Source labels (CLI/header): `openai-web`, `web`, `oauth`, `api`, `local`, `cli`,
 Cookie-based providers expose a Cookie source picker (Automatic or Manual) in Settings → Providers.
 Some browser cookie imports are cached in Keychain and reused until the session is invalid. API keys, manual cookie
 headers, source selection, provider ordering, and token accounts are stored in `~/.codexbar/config.json`.
+
+Tencent Cloud Singapore Personal Edition uses console cookies to read monthly credits and reset dates.
+See [Tencent Token Plan](tencent-token-plan.md) for setup, data mapping, and validation limits.
 
 ## Usage & Spend settings
 

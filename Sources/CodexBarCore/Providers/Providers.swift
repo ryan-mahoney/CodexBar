@@ -30,6 +30,7 @@ public enum UsageProvider: String, CaseIterable, Sendable, Codable {
     case alibaba
     case alibabatokenplan
     case qwencloud
+    case tencenttokenplan
     case factory
     case fireworks
     case gemini
